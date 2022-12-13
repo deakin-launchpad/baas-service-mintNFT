@@ -1,15 +1,15 @@
 FROM node:16-alpine
 
-RUN apk add --update bash
-
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY . .
 
-EXPOSE 8000
-
-RUN npm install --silent
+RUN npm install
 
 RUN cp .env.example .env
+
+ENV PORT=8080
+
+EXPOSE 8080
 
 CMD ["npm", "start"]
