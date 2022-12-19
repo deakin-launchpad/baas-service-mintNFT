@@ -7,7 +7,7 @@ const mintNFT = {
 	method: "POST",
 	path: "/api/demo/mintNFT",
 	options: {
-		description: "mint a non fungible token",
+		description: "mint a non fungible token on the algorand testnet",
 		tags: ["api"],
 		handler: function (request, h) {
 			var payloadData = request.payload;

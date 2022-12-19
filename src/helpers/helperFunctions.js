@@ -126,6 +126,20 @@ export async function createAsset(data, algoClient, account) {
 	return asset;
 }
 
+export async function signAndSendTransaction(asset, algoClient, account) {
+	try {
+		console.log("=== SIGN AND CONFRIM TRANSACTION ===");
+		const rawSignedTxn = asset.signTxn(account.sk);
+		const tx = await algoClient.sendRawTransaction(rawSignedTxn).do();
+		const confirmedTxn = await algosdk.waitForConfirmation(algoClient, tx.txId, 4);
+		const assetID = confirmedTxn["asset-index"];
+		console.log("Transaction " + tx.txId + " confirmed in round " + confirmedTxn["confirmed-round"]);
+		return assetID;
+	} catch (err) {
+		return err;
+	}
+}
+
 export const printCreatedAsset = async function (algodClient, account, assetid) {
 	let accountInfo = await algodClient.accountInformation(account).do();
 	for (let idx = 0; idx < accountInfo["created-assets"].length; idx++) {
