@@ -89,3 +89,64 @@ export function respondToServer(payloadData, cb) {
 	console.log("=== JOB RESPONDED ===");
 	return;
 }
+
+export async function createAsset(data, algoClient, account) {
+	console.log("=== CREATE ASSET ===");
+	const creator = account.addr;
+	const defaultFrozen = true;
+	const unitName = data.unitName;
+	const assetName = data.assetName;
+	const assetUrl = data.url;
+	let note = undefined;
+	let manager = undefined;
+	let reserve = undefined;
+	let freeze = undefined;
+	let clawback = undefined;
+	let assetMetaDataHash = undefined;
+	const total = 1;
+	const decimals = 0;
+
+	let params = await algoClient.getTransactionParams().do();
+	let asset = await algosdk.makeAssetCreateTxnWithSuggestedParams(
+		creator,
+		note,
+		total,
+		decimals,
+		defaultFrozen,
+		manager,
+		reserve,
+		freeze,
+		clawback,
+		unitName,
+		assetName,
+		assetUrl,
+		assetMetaDataHash,
+		params
+	);
+	return asset;
+}
+
+export const printCreatedAsset = async function (algodClient, account, assetid) {
+	let accountInfo = await algodClient.accountInformation(account).do();
+	for (let idx = 0; idx < accountInfo["created-assets"].length; idx++) {
+		let scrutinizedAsset = accountInfo["created-assets"][idx];
+		if (scrutinizedAsset["index"] == assetid) {
+			console.log("AssetID = " + scrutinizedAsset["index"]);
+			let myparms = JSON.stringify(scrutinizedAsset["params"], undefined, 2);
+			console.log("parms = " + myparms);
+			break;
+		}
+	}
+};
+
+export const printAssetHolding = async function (algodClient, account, assetid) {
+	let accountInfo = await algodClient.accountInformation(account).do();
+	for (let idx = 0; idx < accountInfo["assets"].length; idx++) {
+		let scrutinizedAsset = accountInfo["assets"][idx];
+		if (scrutinizedAsset["asset-id"] == assetid) {
+			let myassetholding = JSON.stringify(scrutinizedAsset, undefined, 2);
+			console.log("assetholdinginfo = " + myassetholding);
+			break;
+		}
+	}
+};
