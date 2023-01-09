@@ -1,6 +1,5 @@
 import async from "async";
 import UniversalFunctions from "../../utils/universalFunctions.js";
-const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
 import {
 	connectToAlgorand,
 	createAsset,
@@ -11,9 +10,7 @@ import {
 	createIPFSAsset,
 	createArc3Asset,
 } from "../../helpers/helperFunctions.js";
-
-import pinataSdk from "@pinata/sdk";
-const pinata = new pinataSdk(process.env.pinataApiKey, process.env.pinataApiSecret);
+const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
 
 const mintNFT = (payloadData, callback) => {
 	let algoClient, account, asset, assetID;
@@ -47,7 +44,7 @@ const mintNFT = (payloadData, callback) => {
 };
 
 const mintNftIPFS = (payloadData, callback) => {
-	let algoClient, account, asset, assetID, algoAsset;
+	let algoClient, account, asset, algoAsset;
 	const tasks = {
 		connectToBlockchain: (cb) => {
 			algoClient = connectToAlgorand("", "https://testnet-api.algonode.cloud", 443);
