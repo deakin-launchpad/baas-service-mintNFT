@@ -12,7 +12,7 @@ const mintNFT = {
 		handler: function (request, h) {
 			var payloadData = request.payload;
 			return new Promise((resolve, reject) => {
-				Controller.MintNFTController(payloadData, function (err, data) {
+				Controller.MintNFTController.mintNFT(payloadData, function (err, data) {
 					if (err) reject(UniversalFunctions.sendError(err));
 					else resolve(UniversalFunctions.sendSuccess(Config.APP_CONSTANTS.STATUS_MSG.SUCCESS.DEFAULT, data));
 				});
@@ -34,4 +34,35 @@ const mintNFT = {
 	},
 };
 
-export default mintNFT;
+const mintNftIPFS = {
+	method: "POST",
+	path: "/api/demo/mintNftIPFS",
+	options: {
+		description: "mint a non fungible token using algorand to IPFS",
+		tags: ["api"],
+		handler: function (request, h) {
+			var payloadData = request.payload;
+			return new Promise((resolve, reject) => {
+				Controller.MintNFTController.mintNftIPFS(payloadData, function (err, data) {
+					if (err) reject(UniversalFunctions.sendError(err));
+					else resolve(UniversalFunctions.sendSuccess(Config.APP_CONSTANTS.STATUS_MSG.SUCCESS.DEFAULT, data));
+				});
+			});
+		},
+		// validate: {
+		// 	payload: Joi.object({
+		// 		unitName: Joi.string().required(),
+		// 		assetName: Joi.string().required(),
+		// 		url: Joi.string().required(),
+		// 	}).label("Demo Model"),
+		// 	failAction: UniversalFunctions.failActionFunction,
+		// },
+		plugins: {
+			"hapi-swagger": {
+				responseMessages: UniversalFunctions.CONFIG.APP_CONSTANTS.swaggerDefaultResponseMessages,
+			},
+		},
+	},
+};
+
+export default [mintNFT, mintNftIPFS];
