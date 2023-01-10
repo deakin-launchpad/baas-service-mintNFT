@@ -218,7 +218,6 @@ export const assetPinnedToIpfs = async (nftFilePath, mimeType, assetName, assetD
 	console.log("Asset pinned to IPFS via Pinata: ", resultFile);
 
 	let metadata = assetMetadata.arc3MetadataJson;
-
 	const integrity = ipfsHash(resultFile.IpfsHash);
 
 	metadata.name = `${assetName}@arc3`;
@@ -231,13 +230,12 @@ export const assetPinnedToIpfs = async (nftFilePath, mimeType, assetName, assetD
 	metadata.properties.file_url_integrity = `${integrity.cidBase64}`;
 
 	console.log("Algorand NFT-IPFS metadata: ", metadata);
-
 	const resultMeta = await pinata.pinJSONToIPFS(metadata, pinMeta);
 	const metaIntegrity = ipfsHash(resultMeta.IpfsHash);
 	console.log("Asset metadata pinned to IPFS via Pinata: ", resultMeta);
 
 	return {
-		name: `${assetName}@arc3`,
+		name: `${assetName}`,
 		url: `ipfs://${resultMeta.IpfsHash}`,
 		metadata: metaIntegrity.cidUint8Arr,
 		integrity: metaIntegrity.cidBase64,
@@ -275,8 +273,6 @@ export const createArc3Asset = async (asset, account) => {
 		console.trace();
 	});
 
-	console.log(asset);
-
 	const txParams = await algodClient.getTransactionParams().do();
 
 	const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
@@ -297,14 +293,11 @@ export const createArc3Asset = async (asset, account) => {
 
 	const rawSignedTxn = txn.signTxn(account.sk);
 	const tx = await algodClient.sendRawTransaction(rawSignedTxn).do();
-
 	const confirmedTxn = await waitForConfirmation(tx.txId);
 	const txInfo = await algodClient.pendingTransactionInformation(tx.txId).do();
-
 	const assetID = txInfo["asset-index"];
 
 	console.log("Account ", account.addr, " has created ARC3 compliant NFT with asset ID", assetID);
 	console.log(`Check it out at https://testnet.algoexplorer.io/asset/${assetID}`);
-
 	return { assetID };
 };
