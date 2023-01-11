@@ -5,14 +5,14 @@ const Config = UniversalFunctions.CONFIG;
 
 const mintNFT = {
 	method: "POST",
-	path: "/api/demo/mintNFT",
+	path: "/api/demo/createArc3Asset",
 	options: {
-		description: "mint a non fungible token on the algorand testnet",
+		description: "create an arc3 asset on the algorand testnet",
 		tags: ["api"],
 		handler: function (request, h) {
 			var payloadData = request.payload;
 			return new Promise((resolve, reject) => {
-				Controller.MintNFTController.mintNFT(payloadData, function (err, data) {
+				Controller.MintNFTController.createAlgoAsset(payloadData, function (err, data) {
 					if (err) reject(UniversalFunctions.sendError(err));
 					else resolve(UniversalFunctions.sendSuccess(Config.APP_CONSTANTS.STATUS_MSG.SUCCESS.DEFAULT, data));
 				});

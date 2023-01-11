@@ -4,15 +4,13 @@ import {
 	connectToAlgorand,
 	createAsset,
 	getBlockchainAccount,
-	printCreatedAsset,
-	printAssetHolding,
 	signAndSendTransaction,
 	createIPFSAsset,
 	createArc3Asset,
 } from "../../helpers/helperFunctions.js";
 const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
 
-const mintNFT = (payloadData, callback) => {
+const createAlgoAsset = (payloadData, callback) => {
 	let algoClient, account, asset, assetID;
 
 	const tasks = {
@@ -31,9 +29,6 @@ const mintNFT = (payloadData, callback) => {
 		},
 		signTransaction: async (cb) => {
 			assetID = await signAndSendTransaction(asset, algoClient, account);
-			console.log(assetID);
-			await printCreatedAsset(algoClient, account.addr, assetID);
-			await printAssetHolding(algoClient, account.addr, assetID);
 			if (!assetID) return cb(ERROR.APP_ERROR);
 		},
 	};
@@ -44,7 +39,7 @@ const mintNFT = (payloadData, callback) => {
 };
 
 const mintNftIPFS = (payloadData, callback) => {
-	let algoClient, account, asset, algoAsset;
+	let algoClient, account, asset, algoAsset, assetID;
 	const tasks = {
 		connectToBlockchain: (cb) => {
 			algoClient = connectToAlgorand("", "https://testnet-api.algonode.cloud", 443);
@@ -63,6 +58,10 @@ const mintNftIPFS = (payloadData, callback) => {
 			algoAsset = await createArc3Asset(asset, account);
 			if (!algoAsset) return cb(ERROR.APP_ERROR);
 		},
+		signTransaction: async (cb) => {
+			assetID = await signAndSendTransaction(algoAsset.algoAsset, algoClient, account);
+			if (!assetID) return cb(ERROR.APP_ERROR);
+		},
 	};
 	async.series(tasks, (err, result) => {
 		if (err) return callback(err);
@@ -71,6 +70,6 @@ const mintNftIPFS = (payloadData, callback) => {
 };
 
 export default {
-	mintNFT: mintNFT,
+	createAlgoAsset: createAlgoAsset,
 	mintNftIPFS: mintNftIPFS,
 };
