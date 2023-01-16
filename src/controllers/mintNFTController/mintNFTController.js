@@ -51,7 +51,7 @@ const mintNftIPFS = (payloadData, callback) => {
 			if (!account) return cb(ERROR.APP_ERROR);
 		},
 		createIPFSAsset: async (cb) => {
-			asset = await createIPFSAsset();
+			asset = await createIPFSAsset(payloadData.dataFileURL);
 			if (!asset) return cb(ERROR.APP_ERROR);
 		},
 		createAsset: async (cb) => {

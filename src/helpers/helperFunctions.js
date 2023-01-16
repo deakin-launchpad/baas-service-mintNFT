@@ -154,12 +154,12 @@ const ipfsHash = (cid) => {
 	return { cidUint8Arr, cidBase64 };
 };
 
-export async function createIPFSAsset() {
+export async function createIPFSAsset(image) {
 	let asset = await pinata
 		.testAuthentication()
 		.then(async (res) => {
 			console.log("Pinata test authentication: ", res);
-			return assetPinnedToIpfs("orange.jpeg", "image/jpeg", "Orange", "Orange JPEG image pinned to IPFS");
+			return assetPinnedToIpfs(image, "image/jpeg", "Image", "JPEG image pinned to IPFS");
 		})
 		.catch((err) => {
 			return console.log(err);
@@ -167,19 +167,23 @@ export async function createIPFSAsset() {
 	return asset;
 }
 
-export const assetPinnedToIpfs = async (nftFilePath, mimeType, assetName, assetDesc) => {
-	const nftFile = fs.createReadStream(nftFilePath);
-	const nftFileName = nftFilePath.split("/").pop();
+export const assetPinnedToIpfs = async (image, mimeType, assetName, assetDesc) => {
+	const img = image.blob;
+	let base64Image = img.split("data:image/jpeg;base64,").pop();
+	const buffer = Buffer.from(base64Image, "base64");
+	fs.writeFileSync("image.jpeg", buffer);
+	const nftFile = fs.createReadStream("image.jpeg");
+
 	const properties = {
-		file_url: nftFileName,
+		file_url: "trial",
 		file_url_integrity: "",
 		file_url_mimetype: mimeType,
 	};
 	const pinMeta = {
 		pinataMetadata: {
-			name: assetName,
+			name: "trial",
 			keyvalues: {
-				url: nftFileName,
+				url: "trial",
 				mimetype: mimeType,
 			},
 		},
