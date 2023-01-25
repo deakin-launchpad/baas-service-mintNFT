@@ -3,37 +3,6 @@ import Joi from "joi";
 import Controller from "../../controllers/index.js";
 const Config = UniversalFunctions.CONFIG;
 
-const mintNFT = {
-	method: "POST",
-	path: "/api/demo/createArc3Asset",
-	options: {
-		description: "create an arc3 asset on the algorand testnet",
-		tags: ["api"],
-		handler: function (request, h) {
-			var payloadData = request.payload;
-			return new Promise((resolve, reject) => {
-				Controller.MintNFTController.createAlgoAsset(payloadData, function (err, data) {
-					if (err) reject(UniversalFunctions.sendError(err));
-					else resolve(UniversalFunctions.sendSuccess(Config.APP_CONSTANTS.STATUS_MSG.SUCCESS.DEFAULT, data));
-				});
-			});
-		},
-		validate: {
-			payload: Joi.object({
-				unitName: Joi.string().required(),
-				assetName: Joi.string().required(),
-				url: Joi.string().required(),
-			}).label("Demo Model"),
-			failAction: UniversalFunctions.failActionFunction,
-		},
-		plugins: {
-			"hapi-swagger": {
-				responseMessages: UniversalFunctions.CONFIG.APP_CONSTANTS.swaggerDefaultResponseMessages,
-			},
-		},
-	},
-};
-
 const mintNftIPFS = {
 	method: "POST",
 	path: "/api/demo/mintNftIPFS",
@@ -51,10 +20,20 @@ const mintNftIPFS = {
 		},
 		// validate: {
 		// 	payload: Joi.object({
-		// 		unitName: Joi.string().required(),
-		// 		assetName: Joi.string().required(),
-		// 		url: Joi.string().required(),
-		// 	}).label("Demo Model"),
+		// 		jobID: Joi.string(),
+		// 		datashopServerAddress: Joi.string(),
+		// 		dataFileURL: Joi.object({
+		// 			url: Joi.string(),
+		// 			json: Joi.object(
+		// 				{
+		// 					assetName: Joi.string().required(),
+		// 					blob: Joi.string().required(),
+		// 					receiver: Joi.string().pattern(new RegExp("[A-Z2-7]{58}")).required(),
+		// 					signedLogicSig: Joi.string().required()
+		// 				}
+		// 			),
+		// 		}),
+		// 	}).label("Mint NFT IPFS"),
 		// 	failAction: UniversalFunctions.failActionFunction,
 		// },
 		plugins: {
@@ -65,4 +44,4 @@ const mintNftIPFS = {
 	},
 };
 
-export default [mintNFT, mintNftIPFS];
+export default [ mintNftIPFS];

@@ -2,11 +2,14 @@ import algosdk, { encodeUint64 } from "algosdk";
 import axios from "axios";
 import bs58 from "bs58";
 import fs from "fs";
+import Path from "path";
+import { fileURLToPath } from "url";
 import { assetMetadata } from "../helpers/assetMetaData.js";
 import pinataSdk from "@pinata/sdk";
 const pinata = new pinataSdk(process.env.pinataApiKey, process.env.pinataApiSecret);
-const algodClient = new algosdk.Algodv2(process.env.algodClientToken, process.env.algodClientUrl, process.env.algodClientPort);
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = Path.dirname(__filename);
 /**
  *
  * @param {String} token
@@ -96,44 +99,8 @@ export function respondToServer(payloadData, cb) {
 	return;
 }
 
-export async function createAsset(data, algoClient, account) {
-	console.log("=== CREATE ASSET ===");
-	const creator = account.addr;
-	const defaultFrozen = true;
-	const unitName = data.unitName;
-	const assetName = data.assetName;
-	const assetUrl = data.url;
-	let note = undefined;
-	let manager = undefined;
-	let reserve = undefined;
-	let freeze = undefined;
-	let clawback = undefined;
-	let assetMetaDataHash = undefined;
-	const total = 1;
-	const decimals = 0;
-
-	let params = await algoClient.getTransactionParams().do();
-	let asset = await algosdk.makeAssetCreateTxnWithSuggestedParams(
-		creator,
-		note,
-		total,
-		decimals,
-		defaultFrozen,
-		manager,
-		reserve,
-		freeze,
-		clawback,
-		unitName,
-		assetName,
-		assetUrl,
-		assetMetaDataHash,
-		params
-	);
-	return asset;
-}
-
-export async function signAndSendTransaction(asset, algoClient, account) {
-	console.log("=== SIGN AND CONFRIM TRANSACTION ===");
+export async function signAndSendAssetTransaction(asset, algoClient, account) {
+	console.log("=== SIGN AND CONFRIM ASSET TRANSACTION ===");
 	try {
 		const rawSignedTxn = asset.signTxn(account.sk);
 		const tx = await algoClient.sendRawTransaction(rawSignedTxn).do();
@@ -144,6 +111,103 @@ export async function signAndSendTransaction(asset, algoClient, account) {
 		console.log(`Check it out at https://testnet.algoexplorer.io/asset/${assetID}`);
 		return assetID;
 	} catch (err) {
+		console.log(err);
+		return err;
+	}
+}
+
+export const createSignSendAssetOptInTxn = async (algodclient, accountAddr, assetID, signedLogicSig) => {
+	console.log("=== CREATE ASSET OPT IN TRANSACTION ===");
+	try {
+		const params = await algodclient.getTransactionParams().do();
+
+		const sender = accountAddr;
+		const recipient = accountAddr;
+		const revocationTarget = undefined;
+		const closeRemainderTo = undefined;
+		const note = undefined;
+		const amount = 0;
+
+		const opttxn = algosdk.makeAssetTransferTxnWithSuggestedParams(
+			sender, 
+			recipient, 
+			closeRemainderTo, 
+			revocationTarget,
+			amount, 
+			note, 
+			assetID, 
+			params);
+		
+		const signedLogicSigArr = Uint8Array.from(signedLogicSig);
+
+		const filePath = Path.join(__dirname, 'assetOptinApproval.teal');
+		const program = fs.readFileSync(filePath);
+		const results = await algodclient.compile(program).do();
+		const compiledProgram = new Uint8Array(Buffer.from(results.result, "base64"));
+		let lsig = new algosdk.LogicSig(compiledProgram);
+		lsig.sig = signedLogicSigArr;
+
+		const txId = logicSignAndSendTransaction(algodclient, opttxn, lsig);
+		return txId;
+	} catch (err) {
+		console.log(err);
+		return err;
+	}
+}
+
+const logicSignAndSendTransaction = async (algodclient, txn, lsig) => {
+	console.log("=== SIGN AND SEND TRANSACTION SIGNED BY LOGIC SIG ===");
+	try {
+		const rawSignedTxn = algosdk.signLogicSigTransactionObject(txn, lsig);
+		const tx = (await algodclient.sendRawTransaction(rawSignedTxn.blob).do());
+		const confirmedTxn = await algosdk.waitForConfirmation(algodclient, tx.txId, 4);
+		console.log("Transaction " + tx.txId + " confirmed in round " + confirmedTxn["confirmed-round"]);
+		return tx.txId;
+	} catch (err) {
+		console.log(err);
+		return err;
+	}
+}
+
+export const createSignSendAssetTransferTxn = async (algodClient, assetID, sender, recipient, senderSig) => {
+	console.log(sender, recipient);
+	console.log("=== CREATE SEND-ASSET TRANSACTION ===");
+	try {
+		const params = await algodClient.getTransactionParams().do();
+
+		const revocationTarget = undefined;
+		const closeRemainderTo = undefined;
+		const note = undefined;
+		const amount = 1;
+		
+		const txn = algosdk.makeAssetTransferTxnWithSuggestedParams(
+			sender, 
+			recipient,
+			closeRemainderTo, 
+			revocationTarget,
+			amount,  
+			note, 
+			assetID, 
+			params);
+
+		const txId = await signAndSendTransaction(algodClient, txn, senderSig);
+		return txId;
+	} catch (err) {
+		console.log(err);
+		return err;
+	}
+}
+
+const signAndSendTransaction = async (algodclient, txn, sig) => {
+	console.log("=== SIGN AND SEND TRANSACTION ===");
+	try {
+		const rawSignedTxn = txn.signTxn(sig);
+		const tx = (await algodclient.sendRawTransaction(rawSignedTxn).do());
+		const confirmedTxn = await algosdk.waitForConfirmation(algodclient, tx.txId, 4);
+		console.log("Transaction " + tx.txId + " confirmed in round " + confirmedTxn["confirmed-round"]);
+		return tx.txId;
+	} catch (err) {
+		console.log(err);
 		return err;
 	}
 }
@@ -154,25 +218,27 @@ const ipfsHash = (cid) => {
 	return { cidUint8Arr, cidBase64 };
 };
 
-export async function createIPFSAsset(image) {
+export async function createIPFSAsset(imageBlob, assetName) {
 	let asset = await pinata
 		.testAuthentication()
 		.then(async (res) => {
 			console.log("Pinata test authentication: ", res);
-			return assetPinnedToIpfs(image, "image/jpeg", "Image", "JPEG image pinned to IPFS");
+			return assetPinnedToIpfs(imageBlob, "image", assetName, "JPEG image pinned to IPFS");
 		})
 		.catch((err) => {
-			return console.log(err);
+			console.log(err);
+			return err;
 		});
 	return asset;
 }
 
-export const assetPinnedToIpfs = async (image, mimeType, assetName, assetDesc) => {
-	const img = image.blob;
-	let base64Image = img.split("data:image/jpeg;base64,").pop();
+export const assetPinnedToIpfs = async (blob, mimeType, assetName, assetDesc) => {
+	let [format, base64Image] = blob.split("data:image/")[1].split(";base64,");
+	mimeType += "/" + format;
 	const buffer = Buffer.from(base64Image, "base64");
-	fs.writeFileSync("image.jpeg", buffer);
-	const nftFile = fs.createReadStream("image.jpeg");
+	const imageFileName = "image." + format;
+	fs.writeFileSync(imageFileName, buffer);
+	const nftFile = fs.createReadStream(imageFileName);
 
 	const properties = {
 		file_url: "trial",
@@ -194,6 +260,8 @@ export const assetPinnedToIpfs = async (image, mimeType, assetName, assetDesc) =
 
 	const resultFile = await pinata.pinFileToIPFS(nftFile, pinMeta);
 	console.log("Asset pinned to IPFS via Pinata: ", resultFile);
+	fs.unlinkSync(imageFileName);
+
 	let metadata = assetMetadata.arc3MetadataJson;
 	const integrity = ipfsHash(resultFile.IpfsHash);
 
@@ -219,9 +287,9 @@ export const assetPinnedToIpfs = async (image, mimeType, assetName, assetDesc) =
 	};
 };
 
-export const createArc3Asset = async (asset, account) => {
+export const createArc3Asset = async (algoClient, asset, account) => {
 	console.log("=== CREATE ARC3 ASSET ===");
-	const txParams = await algodClient.getTransactionParams().do();
+	const txParams = await algoClient.getTransactionParams().do();
 	const algoAsset = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
 		from: account.addr,
 		total: 1,

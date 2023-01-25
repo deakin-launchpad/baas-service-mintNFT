@@ -2,66 +2,69 @@ import async from "async";
 import UniversalFunctions from "../../utils/universalFunctions.js";
 import {
 	connectToAlgorand,
-	createAsset,
 	getBlockchainAccount,
-	signAndSendTransaction,
+	signAndSendAssetTransaction,
+	createSignSendAssetOptInTxn,
+	createSignSendAssetTransferTxn,
 	createIPFSAsset,
 	createArc3Asset,
+	respondToServer
 } from "../../helpers/helperFunctions.js";
 const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
 
-const createAlgoAsset = (payloadData, callback) => {
-	let algoClient, account, asset, assetID;
-
-	const tasks = {
-		connectToBlockchain: (cb) => {
-			algoClient = connectToAlgorand("", "https://testnet-api.algonode.cloud", 443);
-			if (!algoClient) return cb(ERROR.APP_ERROR);
-			cb();
-		},
-		getAccount: async (cb) => {
-			account = await getBlockchainAccount();
-			if (!account) return cb(ERROR.APP_ERROR);
-		},
-		createAsset: async (cb) => {
-			asset = await createAsset(payloadData, algoClient, account);
-			if (!asset) return cb(ERROR.APP_ERROR);
-		},
-		signTransaction: async (cb) => {
-			assetID = await signAndSendTransaction(asset, algoClient, account);
-			if (!assetID) return cb(ERROR.APP_ERROR);
-		},
-	};
-	async.series(tasks, (err, result) => {
-		if (err) return callback(err);
-		return callback(null, { result });
-	});
-};
 
 const mintNftIPFS = (payloadData, callback) => {
-	let algoClient, account, asset, algoAsset, assetID;
+	let algoClient, account, asset, algoAsset, assetID, optInTxId, assetTransferTxId;
+	const data = JSON.parse(payloadData.dataFileURL.json);
 	const tasks = {
 		connectToBlockchain: (cb) => {
 			algoClient = connectToAlgorand("", "https://testnet-api.algonode.cloud", 443);
 			if (!algoClient) return cb(ERROR.APP_ERROR);
 			cb();
 		},
-		getAccount: async (cb) => {
-			account = await getBlockchainAccount();
+		getAccount: (cb) => {
+			account = getBlockchainAccount();
 			if (!account) return cb(ERROR.APP_ERROR);
+			cb();
 		},
-		createIPFSAsset: async (cb) => {
-			asset = await createIPFSAsset(payloadData.dataFileURL);
-			if (!asset) return cb(ERROR.APP_ERROR);
+		createIPFSAsset: (cb) => {
+			createIPFSAsset(data.blob, data.assetName).then(res => {
+				asset = res;
+				if (!asset || isError(assetID)) return cb(ERROR.APP_ERROR);
+				cb();
+			});
 		},
-		createAsset: async (cb) => {
-			algoAsset = await createArc3Asset(asset, account);
-			if (!algoAsset) return cb(ERROR.APP_ERROR);
+		createAsset: (cb) => {
+			createArc3Asset(algoClient, asset, account).then(res => {
+				algoAsset = res;
+				if (!algoAsset || isError(assetID)) return cb(ERROR.APP_ERROR);
+				cb();
+			});
 		},
-		signTransaction: async (cb) => {
-			assetID = await signAndSendTransaction(algoAsset.algoAsset, algoClient, account);
-			if (!assetID) return cb(ERROR.APP_ERROR);
+		signTransaction: (cb) => {
+			signAndSendAssetTransaction(algoAsset.algoAsset, algoClient, account).then(res => {
+				assetID = res;
+				if (!assetID || isError(assetID)) return cb(ERROR.APP_ERROR);
+				cb();
+			});
 		},
+		createSignSendOptInTransaction: (cb) => {
+			createSignSendAssetOptInTxn(algoClient, data.receiver, assetID, data.signedLogicSig).then(res => {
+				optInTxId = res;
+				if (!optInTxId || isError(assetID)) return cb(ERROR.APP_ERROR);
+				cb();
+			});
+		},
+		createSignSendAssetTransferTransaction: (cb) => {
+			assetTransferTxId = createSignSendAssetTransferTxn(algoClient, assetID, account.addr, data.receiver, account.sk).then(res => {
+				assetTransferTxId = res;
+				if (!assetTransferTxId || isError(assetID)) return cb(ERROR.APP_ERROR);
+				cb();
+			});
+		},
+		response: (cb) => {
+			respondToServer(payloadData, cb);
+		}
 	};
 	async.series(tasks, (err, result) => {
 		if (err) return callback(err);
@@ -69,7 +72,11 @@ const mintNftIPFS = (payloadData, callback) => {
 	});
 };
 
+const isError = (e) => {
+	return e && e.stack && e.message && typeof e.stack === 'string' 
+		&& typeof e.message === 'string';
+}
+
 export default {
-	createAlgoAsset: createAlgoAsset,
 	mintNftIPFS: mintNftIPFS,
 };
