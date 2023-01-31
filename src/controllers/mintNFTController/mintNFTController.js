@@ -14,7 +14,7 @@ const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
 
 const mintNftIPFS = (payloadData, callback) => {
 	let algoClient, account, asset, algoAsset, assetID, optInTxId, assetTransferTxId;
-	const data = JSON.parse(payloadData.dataFileURL.json);
+	const data = payloadData.dataFileURL.json;
 	const tasks = {
 		connectToBlockchain: (cb) => {
 			algoClient = connectToAlgorand("", "https://testnet-api.algonode.cloud", 443);

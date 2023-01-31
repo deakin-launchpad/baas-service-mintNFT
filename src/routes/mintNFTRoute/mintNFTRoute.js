@@ -18,24 +18,22 @@ const mintNftIPFS = {
 				});
 			});
 		},
-		// validate: {
-		// 	payload: Joi.object({
-		// 		jobID: Joi.string(),
-		// 		datashopServerAddress: Joi.string(),
-		// 		dataFileURL: Joi.object({
-		// 			url: Joi.string(),
-		// 			json: Joi.object(
-		// 				{
-		// 					assetName: Joi.string().required(),
-		// 					blob: Joi.string().required(),
-		// 					receiver: Joi.string().pattern(new RegExp("[A-Z2-7]{58}")).required(),
-		// 					signedLogicSig: Joi.string().required()
-		// 				}
-		// 			),
-		// 		}),
-		// 	}).label("Mint NFT IPFS"),
-		// 	failAction: UniversalFunctions.failActionFunction,
-		// },
+		validate: {
+			payload: Joi.object({
+				jobID: Joi.string(),
+				datashopServerAddress: Joi.string(),
+				dataFileURL: Joi.object({
+					url: Joi.any(),
+					json: Joi.object({
+						assetName: Joi.string().required(),
+						receiver: Joi.string().pattern(new RegExp("[A-Z2-7]{58}")).required(),
+						blob: Joi.string().required(),
+						signedLogicSig: Joi.array().required()
+					}),
+				})
+			}).label("Mint NFT IPFS"),
+			failAction: UniversalFunctions.failActionFunction,
+		},
 		plugins: {
 			"hapi-swagger": {
 				responseMessages: UniversalFunctions.CONFIG.APP_CONSTANTS.swaggerDefaultResponseMessages,
