@@ -63,6 +63,7 @@ const mintNftIPFS = (payloadData, callback) => {
 		},
 		response: (cb) => {
 			respondToServer(payloadData, assetID, cb);
+			cb();
 		},
 	};
 	async.series(tasks, (err, result) => {
