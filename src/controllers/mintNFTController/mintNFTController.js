@@ -8,10 +8,9 @@ import {
 	createSignSendAssetTransferTxn,
 	createIPFSAsset,
 	createArc3Asset,
-	respondToServer
+	respondToServer,
 } from "../../helpers/helperFunctions.js";
 const ERROR = UniversalFunctions.CONFIG.APP_CONSTANTS.STATUS_MSG.ERROR;
-
 
 const mintNftIPFS = (payloadData, callback) => {
 	let algoClient, account, asset, algoAsset, assetID, optInTxId, assetTransferTxId;
@@ -28,43 +27,43 @@ const mintNftIPFS = (payloadData, callback) => {
 			cb();
 		},
 		createIPFSAsset: (cb) => {
-			createIPFSAsset(data.blob, data.assetName).then(res => {
+			createIPFSAsset(data.blob, data.assetName).then((res) => {
 				asset = res;
 				if (!asset || isError(assetID)) return cb(ERROR.APP_ERROR);
 				cb();
 			});
 		},
 		createAsset: (cb) => {
-			createArc3Asset(algoClient, asset, account).then(res => {
+			createArc3Asset(algoClient, asset, account).then((res) => {
 				algoAsset = res;
 				if (!algoAsset || isError(assetID)) return cb(ERROR.APP_ERROR);
 				cb();
 			});
 		},
 		signTransaction: (cb) => {
-			signAndSendAssetTransaction(algoAsset.algoAsset, algoClient, account).then(res => {
+			signAndSendAssetTransaction(algoAsset.algoAsset, algoClient, account).then((res) => {
 				assetID = res;
 				if (!assetID || isError(assetID)) return cb(ERROR.APP_ERROR);
 				cb();
 			});
 		},
 		createSignSendOptInTransaction: (cb) => {
-			createSignSendAssetOptInTxn(algoClient, data.receiver, assetID, data.signedLogicSig).then(res => {
+			createSignSendAssetOptInTxn(algoClient, data.receiver, assetID, data.signedLogicSig).then((res) => {
 				optInTxId = res;
 				if (!optInTxId || isError(assetID)) return cb(ERROR.APP_ERROR);
 				cb();
 			});
 		},
 		createSignSendAssetTransferTransaction: (cb) => {
-			assetTransferTxId = createSignSendAssetTransferTxn(algoClient, assetID, account.addr, data.receiver, account.sk).then(res => {
+			assetTransferTxId = createSignSendAssetTransferTxn(algoClient, assetID, account.addr, data.receiver, account.sk).then((res) => {
 				assetTransferTxId = res;
 				if (!assetTransferTxId || isError(assetID)) return cb(ERROR.APP_ERROR);
 				cb();
 			});
 		},
 		response: (cb) => {
-			respondToServer(payloadData, cb);
-		}
+			respondToServer(payloadData, assetID, cb);
+		},
 	};
 	async.series(tasks, (err, result) => {
 		if (err) return callback(err);
@@ -73,9 +72,8 @@ const mintNftIPFS = (payloadData, callback) => {
 };
 
 const isError = (e) => {
-	return e && e.stack && e.message && typeof e.stack === 'string' 
-		&& typeof e.message === 'string';
-}
+	return e && e.stack && e.message && typeof e.stack === "string" && typeof e.message === "string";
+};
 
 export default {
 	mintNftIPFS: mintNftIPFS,

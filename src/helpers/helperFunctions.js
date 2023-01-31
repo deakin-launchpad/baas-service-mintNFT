@@ -84,14 +84,24 @@ export async function sendTransaction(algoClient, signedTx, txnId, cb) {
  * @param {Object} payloadData
  * @param {any} cb
  */
-export function respondToServer(payloadData, cb) {
+export function respondToServer(payloadData, data, cb) {
 	console.log("=== RESPOND TO SERVER ===");
 	let service = payloadData;
 	let destination = service.datashopServerAddress + "/api/job/updateJob";
-	let lambdaInput = {
-		insightFileURL: service.dataFileURL,
-		jobid: service.jobID,
-	};
+	let lambdaInput;
+	let assetId = "The application ID is: " + data + ` Visit https://testnet.algoexplorer.io/asset/${data} to see the asset`;
+	if (data) {
+		lambdaInput = {
+			insightFileURL: service.dataFileURL,
+			jobid: service.jobID,
+			returnData: assetId,
+		};
+	} else {
+		lambdaInput = {
+			insightFileURL: service.dataFileURL,
+			jobid: service.jobID,
+		};
+	}
 	axios.put(destination, lambdaInput).catch((e) => {
 		cb(e);
 	});
@@ -128,19 +138,11 @@ export const createSignSendAssetOptInTxn = async (algodclient, accountAddr, asse
 		const note = undefined;
 		const amount = 0;
 
-		const opttxn = algosdk.makeAssetTransferTxnWithSuggestedParams(
-			sender, 
-			recipient, 
-			closeRemainderTo, 
-			revocationTarget,
-			amount, 
-			note, 
-			assetID, 
-			params);
-		
+		const opttxn = algosdk.makeAssetTransferTxnWithSuggestedParams(sender, recipient, closeRemainderTo, revocationTarget, amount, note, assetID, params);
+
 		const signedLogicSigArr = Uint8Array.from(signedLogicSig);
 
-		const filePath = Path.join(__dirname, 'assetOptinApproval.teal');
+		const filePath = Path.join(__dirname, "assetOptinApproval.teal");
 		const program = fs.readFileSync(filePath);
 		const results = await algodclient.compile(program).do();
 		const compiledProgram = new Uint8Array(Buffer.from(results.result, "base64"));
@@ -153,13 +155,13 @@ export const createSignSendAssetOptInTxn = async (algodclient, accountAddr, asse
 		console.log(err);
 		return err;
 	}
-}
+};
 
 const logicSignAndSendTransaction = async (algodclient, txn, lsig) => {
 	console.log("=== SIGN AND SEND TRANSACTION SIGNED BY LOGIC SIG ===");
 	try {
 		const rawSignedTxn = algosdk.signLogicSigTransactionObject(txn, lsig);
-		const tx = (await algodclient.sendRawTransaction(rawSignedTxn.blob).do());
+		const tx = await algodclient.sendRawTransaction(rawSignedTxn.blob).do();
 		const confirmedTxn = await algosdk.waitForConfirmation(algodclient, tx.txId, 4);
 		console.log("Transaction " + tx.txId + " confirmed in round " + confirmedTxn["confirmed-round"]);
 		return tx.txId;
@@ -167,7 +169,7 @@ const logicSignAndSendTransaction = async (algodclient, txn, lsig) => {
 		console.log(err);
 		return err;
 	}
-}
+};
 
 export const createSignSendAssetTransferTxn = async (algodClient, assetID, sender, recipient, senderSig) => {
 	console.log(sender, recipient);
@@ -179,16 +181,8 @@ export const createSignSendAssetTransferTxn = async (algodClient, assetID, sende
 		const closeRemainderTo = undefined;
 		const note = undefined;
 		const amount = 1;
-		
-		const txn = algosdk.makeAssetTransferTxnWithSuggestedParams(
-			sender, 
-			recipient,
-			closeRemainderTo, 
-			revocationTarget,
-			amount,  
-			note, 
-			assetID, 
-			params);
+
+		const txn = algosdk.makeAssetTransferTxnWithSuggestedParams(sender, recipient, closeRemainderTo, revocationTarget, amount, note, assetID, params);
 
 		const txId = await signAndSendTransaction(algodClient, txn, senderSig);
 		return txId;
@@ -196,13 +190,13 @@ export const createSignSendAssetTransferTxn = async (algodClient, assetID, sende
 		console.log(err);
 		return err;
 	}
-}
+};
 
 const signAndSendTransaction = async (algodclient, txn, sig) => {
 	console.log("=== SIGN AND SEND TRANSACTION ===");
 	try {
 		const rawSignedTxn = txn.signTxn(sig);
-		const tx = (await algodclient.sendRawTransaction(rawSignedTxn).do());
+		const tx = await algodclient.sendRawTransaction(rawSignedTxn).do();
 		const confirmedTxn = await algosdk.waitForConfirmation(algodclient, tx.txId, 4);
 		console.log("Transaction " + tx.txId + " confirmed in round " + confirmedTxn["confirmed-round"]);
 		return tx.txId;
@@ -210,7 +204,7 @@ const signAndSendTransaction = async (algodclient, txn, sig) => {
 		console.log(err);
 		return err;
 	}
-}
+};
 
 const ipfsHash = (cid) => {
 	const cidUint8Arr = bs58.decode(cid).slice(2);
