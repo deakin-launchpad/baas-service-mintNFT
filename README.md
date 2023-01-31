@@ -1,14 +1,31 @@
 # Baas-service-mintnft
 
-This is a very simple Node Express application that serves as a web server. This application attempts to demonstrate the building of a very simple express app as well as the creation of a few api's to effect data changes.
+This is a very simple Node Hapi / Swagger application that uses Express and serves a web server. This application is meant to act as a service through which users can mint an NFT and pin it to IPFS.
 
-This is a very simple Node Hapi / Swagger application that serves services that you can create over the web. This application attempts to demonstrate the building of very simple blockchain functions that you cna perform for your client.
-
+To mint an NFT, you can either use the [baas-backend](https://github.com/deakin-launchpad/baas_backend) and [baas-frontend](https://github.com/deakin-launchpad/baas_dashboard) and connect to this service, or you can directly hit the API endpoint "/api/demo/mintNftIPFS" for this application which accepts a JSON body type in this format:
+```
+{
+    jobID: String,
+    datashopServerAddress: String,
+    dataFileURL: {
+        url: String,
+        json: {
+            assetName: String,
+            blob: String,
+            receiver: String (RegExp("[A-Z2-7]{58}")),
+            signedLogicSig: Array
+        }
+    }
+}
+``` 
 ## Other BaaS services we offer.
 
-There are also other baas services that we have developed, they are forks of this repository, these include:
+There are also other baas services that we have developed, these include:
 
-- [Mint NFT](https://github.com/deakin-launchpad/baas-service-mintNFT)
+- [Create Company](https://github.com/deakin-launchpad/baas-service-createcompany)
+- [Simple Transaction](https://github.com/deakin-launchpad/baas-service-transaction)
+- [Local Counter](https://github.com/deakin-launchpad/baas-service-localCounter)
+- [Transfer Assets](https://github.com/deakin-launchpad/baas-service-transferAssets)
 
 There will be many more to come!
 
