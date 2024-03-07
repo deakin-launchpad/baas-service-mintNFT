@@ -57,22 +57,22 @@ const mintNftIPFS = (payloadData, callback) => {
 	};
 	async.series(tasks, (err, result) => {
 		let returnData;
-		if (err) return callback(err);
-		return callback(null, { assetID })
-		// if (err || !assetID) {
-		// 	// respond to server with error
-		// 	returnData = null;
-		// } else {
-		// 	// respond to server with success
-		// 	returnData = { assetID };
-		// }
-		// respondToServer(payloadData, returnData, (err, result) => {
-		// 	if (err) {
-		// 		console.log(err);
-		// 	} else {
-		// 		console.log(result);
-		// 	}
-		// });
+		// if (err) return callback(err);
+		// return callback(null, { assetID })
+		if (err || !assetID) {
+			// respond to server with error
+			returnData = null;
+		} else {
+			// respond to server with success
+			returnData = { assetID };
+		}
+		respondToServer(payloadData, returnData, (err, result) => {
+			if (err) {
+				console.log(err);
+			} else {
+				console.log(result);
+			}
+		});
 	});
 };
 
