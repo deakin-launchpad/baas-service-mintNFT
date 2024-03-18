@@ -242,8 +242,8 @@ const signAndSendTransaction = async (algodclient, txn, sig) => {
 export const createArc3Asset = async (algoClient, asset, account) => {
 	console.log("=== CREATE ARC3 ASSET ===");
 	let metadata = assetMetadata.arc3MetadataJson;
-	metadata.image = `ipfs://${asset.assetURL}`;
-	metadata.fileURL = `https://ipfs.io/ipfs/${asset.assetURL}`;
+	metadata.image = asset.assetURL ? `ipfs://${asset.assetURL}` : "";
+	metadata.fileURL = asset.assetURL ? `https://ipfs.io/ipfs/${asset.assetURL}` : "";
 	metadata.name = asset.assetName;
 
 	const txParams = await algoClient.getTransactionParams().do();
