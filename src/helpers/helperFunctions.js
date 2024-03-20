@@ -231,7 +231,7 @@ const signAndSendTransaction = async (algodclient, txn, sig) => {
  * @param {Object} asset 
  * @param {String} asset.name
  * @param {String} asset.unitName
- * @param {String} asset.url
+ * @param {String} asset.assetURL
  * @param {Number} asset.totalSupply
  * @param {Number} asset.decimals
  * @param {Object} asset.metadata
@@ -241,9 +241,16 @@ const signAndSendTransaction = async (algodclient, txn, sig) => {
  */
 export const createArc3Asset = async (algoClient, asset, account) => {
 	console.log("=== CREATE ARC3 ASSET ===");
+
 	let metadata = assetMetadata.arc3MetadataJson;
-	metadata.image = asset.assetURL ? `ipfs://${asset.assetURL}` : "";
-	metadata.fileURL = asset.assetURL ? `https://ipfs.io/ipfs/${asset.assetURL}` : "";
+	if (asset.assetURL?.includes("ipfs")) {
+		const cid = asset.assetURL.split("ipfs://")[1];
+		metadata.image = asset.assetURL ?? "";
+		metadata.fileURL = asset.assetURL ? `https://ipfs.io/ipfs/${cid}` : "";
+	} else {
+		metadata.image = asset.assetURL ? `ipfs://${asset.assetURL}` : "";
+		metadata.fileURL = asset.assetURL ? `https://ipfs.io/ipfs/${asset.assetURL}` : "";
+	}
 	metadata.name = asset.assetName;
 
 	const txParams = await algoClient.getTransactionParams().do();
@@ -253,7 +260,7 @@ export const createArc3Asset = async (algoClient, asset, account) => {
 		decimals: asset.decimals,
 		unitName: asset.assetUnitName,
 		assetName: asset.assetName.includes("@arc3") ? asset.assetName : `${asset.assetName}@arc3`,
-		assetURL: asset.assetURL ? `ipfs://${asset.assetURL}` : "",
+		assetURL: metadata.image,
 		suggestedParams: txParams,
 		manager: asset.receiver,
 		reserve: undefined,
